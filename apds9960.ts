@@ -248,10 +248,10 @@ namespace ZjwlGesture {
 
     export class gesture_data_type {
         
-        u_data: number = pins.createBuffer(32);
-        d_data: Buffer = pins.createBuffer(32);
-        l_data: Buffer = pins.createBuffer(32);
-        r_data: Buffer = pins.createBuffer(32);
+        u_data: number[];
+        d_data: number[];
+        l_data: number[];
+        r_data: number[];
         index: number;
         total_gestures: number;
         in_threshold: number;
