@@ -242,7 +242,8 @@ namespace ZjwlGesture {
         basic.pause(5000);
         let apds9960 = new APDS9960();
         apds9960.init();
-        let a = apds9960.read()
+        serial.writeLine("chushihuawancheng")
+        //let a = apds9960.read()
 
         basic.showLeds(`
                 . . . . .
@@ -251,8 +252,8 @@ namespace ZjwlGesture {
                 # . # . #
                 . # # # .
                 `);
-        basic.pause(200)
-        serial.writeLine(a.toString())
+       // basic.pause(200)
+       // serial.writeLine(a.toString())
     }
 
     /* Container for gesture data */
