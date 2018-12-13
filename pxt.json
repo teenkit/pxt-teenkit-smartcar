@@ -1,0 +1,18 @@
+{
+    "name": "pxt-zjwl-apds9960",
+    "version": "0.0.0",
+    "description": "gesture recognition,apds9960",
+    "dependencies": {
+        "core": "*",
+        "radio": "*"
+    },
+    "files": [
+        "README.md",
+        "apds9960.ts"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "public": false,
+    "license": "MIT"
+}
