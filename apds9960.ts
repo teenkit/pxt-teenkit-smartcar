@@ -830,7 +830,8 @@ namespace ZjwlGesture {
                             /* Filter and process gesture data. Decode near/far state */
                             if (this.processGestureData()) {
                                 if (this.decodeGesture()) {
-
+                                    motion = gesture_motion;
+                                    return motion;
                                 }
                             }
                             /* Reset data */
@@ -839,6 +840,8 @@ namespace ZjwlGesture {
                         }
 
                     }
+
+                    return 0;
 
                 }
                 else {
