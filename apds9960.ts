@@ -161,7 +161,7 @@ let DEFAULT_GCONF3 = 0       // All photodiodes active during gesture
 let DEFAULT_GIEN = 0       // Disable gesture interrupts
 
 
-let data_buf: Buffer = pins.createBuffer(128);
+
 
 /* Direction definitions */
 enum DIR {
@@ -248,7 +248,7 @@ namespace ZjwlGesture {
 
     export class gesture_data_type {
         
-        u_data: Buffer = pins.createBuffer(32);
+        u_data: number = pins.createBuffer(32);
         d_data: Buffer = pins.createBuffer(32);
         l_data: Buffer = pins.createBuffer(32);
         r_data: Buffer = pins.createBuffer(32);
@@ -260,6 +260,8 @@ namespace ZjwlGesture {
     }
 
     let gesture_data: gesture_data_type;
+    let data_buf: Buffer = pins.createBuffer(128);
+    
 
     export class APDS9960 {
 
@@ -288,13 +290,15 @@ namespace ZjwlGesture {
          * @param[in] len number of bytes to read
          * @return Number of bytes read. -1 on read error.
          */
-        private APDS9960ReadRegBlock (addr: number,buf:any, len:number):number {
+        private APDS9960ReadRegBlock (addr: number, len:number):number {
             let i: number = 0;
-            buf[0] = addr;
-            pins.i2cWriteBuffer(0x39, buf, false);
+            let buf: Buffer = pins.createBuffer(1);
+            data_buf[0] = addr;
+            pins.i2cWriteBuffer(0x39, data_buf, false);
             for (i = 0; i <= len; i++) { 
                 
-                buf[i]=pins.i2cReadBuffer(0x39, 1, false);
+                buf = pins.i2cReadBuffer(0x39, 1, false);
+                data_buf[i]=buf[0];
 
             }
            
@@ -814,7 +818,6 @@ namespace ZjwlGesture {
                     /* If there's stuff in the FIFO, read it into our data block */
                     if (fifo_level > 0) {
                         bytes_read = this.APDS9960ReadRegBlock(APDS9960_GFIFO_U,
-                                     data_buf,
                                      (fifo_level * 4));
                         
 
@@ -830,8 +833,7 @@ namespace ZjwlGesture {
                             /* Filter and process gesture data. Decode near/far state */
                             if (this.processGestureData()) {
                                 if (this.decodeGesture()) {
-                                    motion = gesture_motion;
-                                    return motion;
+
                                 }
                             }
                             /* Reset data */
@@ -840,8 +842,6 @@ namespace ZjwlGesture {
                         }
 
                     }
-
-                    return 0;
 
                 }
                 else {
@@ -855,7 +855,8 @@ namespace ZjwlGesture {
 
             }
 
-            // return motion;
+            motion = gesture_motion;
+            return motion;
         }
 
         /**
