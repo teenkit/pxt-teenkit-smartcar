@@ -242,6 +242,17 @@ namespace ZjwlGesture {
         basic.pause(5000);
         let apds9960 = new APDS9960();
         apds9960.init();
+        let a = apds9960.read()
+
+        basic.showLeds(`
+                . . . . .
+                . # . # .
+                . . # . .
+                # . # . #
+                . # # # .
+                `);
+        basic.pause(200)
+        serial.writeLine(a.toString())
     }
 
     /* Container for gesture data */
@@ -298,10 +309,10 @@ namespace ZjwlGesture {
             for (i = 0; i <= len; i++) { 
                 
                 buf = pins.i2cReadBuffer(0x39, 1, false);
-                data_buf[i]=buf[0];
+                data_buf[i] = buf[0];
+                serial.writeLine(data_buf[i].toString())
 
             }
-           
             return len;
 
         }
@@ -867,15 +878,6 @@ namespace ZjwlGesture {
         init() {
             this.pads9960_init();
             this.enableGestureSensor(true);
-            basic.showLeds(`
-                    . . . . .
-                    . # . # .
-                    . . # . .
-                    # . # . #
-                    . # # # .
-                    `);
-            basic.pause(200);
-            console.log(this.read().toString());
         }
 
         /**
