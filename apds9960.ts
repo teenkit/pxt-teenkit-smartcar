@@ -5,7 +5,7 @@ let APDS9960_I2C_ADDR = 0x39
 
 /* Gesture parameters */
 let GESTURE_THRESHOLD_OUT = 35
-let GESTURE_SENSITIVITY_1 = 40
+let GESTURE_SENSITIVITY_1 = 32
 let GESTURE_SENSITIVITY_2 = 20
 
 /* Error code for returned values */
@@ -247,7 +247,7 @@ namespace ZjwlGesture9960 {
                         lastGesture = gesture;
                         control.raiseEvent(gestureEventId, lastGesture);
                     }
-                    basic.pause(1600);
+                    basic.pause(2000);
                 }
             })
     }
