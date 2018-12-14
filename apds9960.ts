@@ -1,10 +1,12 @@
+
+let DEBUG = 1;
 /* APDS-9960 I2C address */
 let APDS9960_I2C_ADDR = 0x39
 
 /* Gesture parameters */
-let GESTURE_THRESHOLD_OUT = 10
-let GESTURE_SENSITIVITY_1 = 50
-let GESTURE_SENSITIVITY_2 = 20
+let GESTURE_THRESHOLD_OUT = 33
+let GESTURE_SENSITIVITY_1 = 16
+let GESTURE_SENSITIVITY_2 = 16
 
 /* Error code for returned values */
 let ERROR = 0xFF
@@ -225,41 +227,40 @@ enum ZjwlGesture {
  */
 //% weight=10 color=#9F79EE icon="\uf108" block="姿势传感器"
 namespace ZjwlGesture {
+
+    const gestureEventId = 3100;
+    let lastGesture = ZjwlGesture.None;
     /**
      * Do something when a gesture is detected by Grove - Gesture
      * @param gesture type of gesture to detect
      * @param handler code to run
      */
     //% blockId=grove_gesture_create_event block="on Gesture|%gesture"
-    export function onGesture(gesture: number) {
-        basic.showLeds(`
-            . . . . .
-            . # . # .
-            . . . . .
-            # . . . #
-            . # # # .
-            `);
-        basic.pause(5000);
-
-        serial.writeLine("chushihuawancheng")
-
-        basic.showLeds(`
-                . . . . .
-                . # . # .
-                . . # . .
-                # . # . #
-                . # # # .
-                `);
+    export function onGesture(gesture: ZjwlGesture , handler: Action) {
+        control.onEvent(gestureEventId, gesture, handler);
+        let apds9960 = new APDS9960();
+        apds9960.init();
+        control.inBackground(() => {
+            while(true) {
+                const gesture = apds9960.read();
+                    if (gesture != lastGesture) {
+                        lastGesture = gesture;
+                        control.raiseEvent(gestureEventId, lastGesture);
+                    }
+                    basic.pause(50);
+                }
+            })
     }
 
     /* Container for gesture data */
 
     export class gesture_data_type {
+
         
-        u_data: number[];
-        d_data: number[];
-        l_data: number[];
-        r_data: number[];
+        u_data: Buffer;
+        d_data: Buffer;
+        l_data: Buffer;
+        r_data: Buffer;
         index: number;
         total_gestures: number;
         in_threshold: number;
@@ -267,7 +268,8 @@ namespace ZjwlGesture {
 
     }
 
-    let gesture_data: gesture_data_type;
+    let gesture_data = new gesture_data_type;
+    
     let data_buf: Buffer = pins.createBuffer(128);
     
 
@@ -289,6 +291,17 @@ namespace ZjwlGesture {
 
             pins.i2cWriteBuffer(0x39, buf, false);
         }
+        private APDS9960ReadRegBlock1(addr: number,len:number): Buffer {
+            let buf: Buffer = pins.createBuffer(32);
+            buf[0] = addr;
+            pins.i2cWriteBuffer(0x39, buf, false);
+            buf = pins.i2cReadBuffer(0x39, len, false);
+            for (let i = 0; i < len; i = i++) { 
+                serial.writeLine(buf[i].toString());
+            }
+            return buf;
+        }
+
 
         /**
          * @brief Reads a block (array) of bytes from the I2C device and register
@@ -300,18 +313,26 @@ namespace ZjwlGesture {
          */
         private APDS9960ReadRegBlock (addr: number, len:number):number {
             let i: number = 0;
-            let buf: Buffer = pins.createBuffer(1);
-            data_buf[0] = addr;
-            pins.i2cWriteBuffer(0x39, data_buf, false);
-            for (i = 0; i <= len; i++) { 
+            let y: number = 0;
+            
+            for (let i = 0; i < len; i=i+4) { 
                 
-                buf = pins.i2cReadBuffer(0x39, 1, false);
-                data_buf[i] = buf[0];
-                serial.writeLine(data_buf[i].toString())
+                data_buf[i] = this.readi2c(0xFc);
+                data_buf[i+1] = this.readi2c(0xFd);
+                data_buf[i+2] = this.readi2c(0xFe);
+                data_buf[i + 3] = this.readi2c(0xFf);
 
+                if (1) {
+                    
+                    serial.writeLine(data_buf[i].toString() + " ; "
+                                    +data_buf[i+1].toString() + " ; "
+                                    +data_buf[i+2].toString() + " ; "
+                                    +data_buf[i+3].toString() + " ; "  );
+                }    
             }
-            return len;
 
+        
+            return len;
         }
 
         private getMode(): number {
@@ -487,6 +508,7 @@ namespace ZjwlGesture {
          * @brief Resets all the parameters in the gesture data member
          */
         private resetGestureParameters() {
+
             gesture_data.index = 0;
             gesture_data.total_gestures = 0;
 
@@ -501,6 +523,7 @@ namespace ZjwlGesture {
 
             gesture_state = 0;
             gesture_motion = DIR.DIR_NONE;
+
         }
 
         /**
@@ -547,8 +570,8 @@ namespace ZjwlGesture {
             Set AUX to LED_BOOST_300
             Enable PON, WEN, PEN, GEN in ENABLE 
             */
-            this.resetGestureParameters();
-            this.APDS9960WriteReg(APDS9960_WTIME, 0xFF);
+            this.resetGestureParameters(); 
+            this.APDS9960WriteReg(APDS9960_WTIME, 0xFF);  
             this.APDS9960WriteReg(APDS9960_PPULSE, DEFAULT_GESTURE_PPULSE);
             this.setLEDBoost(LED_BOOST_300);
             if (interrupts) {
@@ -560,26 +583,53 @@ namespace ZjwlGesture {
             this.enablePower();
             this.setMode(WAIT, 1)
             this.setMode(PROXIMITY, 1);
-            this.setMode(GESTURE, 1);
+            this.setMode(GESTURE, 1); 
         }
 
         private pads9960_init() {
+
             let aa = this.APDS9960ReadReg(0X92);
             if (aa == 0xAB) {
-                this.APDS9960WriteReg(APDS9960_GPENTH, DEFAULT_GPENTH);
-                this.APDS9960WriteReg(APDS9960_GEXTH, DEFAULT_GEXTH);
-                this.APDS9960WriteReg(APDS9960_GCONF1, DEFAULT_GCONF1);
-                this.setGestureGain(DEFAULT_GGAIN);
+                this.APDS9960WriteReg(APDS9960_GPENTH, DEFAULT_GPENTH);//0x28
+                this.APDS9960WriteReg(APDS9960_GEXTH, DEFAULT_GEXTH);//0x1e
+                this.APDS9960WriteReg(APDS9960_GCONF1, DEFAULT_GCONF1);//0x40
+                this.setGestureGain(DEFAULT_GGAIN);//0x41
                 this.setGestureLEDDrive(DEFAULT_GLDRIVE);
                 this.setGestureWaitTime(DEFAULT_GWTIME);
                 this.APDS9960WriteReg(APDS9960_GOFFSET_U, DEFAULT_GOFFSET);
                 this.APDS9960WriteReg(APDS9960_GOFFSET_D, DEFAULT_GOFFSET);
                 this.APDS9960WriteReg(APDS9960_GOFFSET_L, DEFAULT_GOFFSET);
                 this.APDS9960WriteReg(APDS9960_GOFFSET_R, DEFAULT_GOFFSET);
-                this.APDS9960WriteReg(APDS9960_GPULSE, DEFAULT_GPULSE);
-                this.APDS9960WriteReg(APDS9960_GCONF3, DEFAULT_GCONF3);
+                this.APDS9960WriteReg(APDS9960_GPULSE, DEFAULT_GPULSE);//0xc9
+                this.APDS9960WriteReg(APDS9960_GCONF3, DEFAULT_GCONF3);//00
                 this.setGestureIntEnable(DEFAULT_GIEN);   
             }
+
+            if (0) { 
+                /* Gesture config register dump */
+                let reg:number=0x00;
+                let val:number=0x00;
+                
+                for(reg = 0x80; reg <= 0xAF; reg++) {
+                    if ((reg != 0x82) &&
+                        (reg != 0x8A) && 
+                        (reg != 0x91) && 
+                        (reg != 0xA8) && 
+                        (reg != 0xAC) && 
+                        (reg != 0xAD) )
+                    {
+                        val = this.APDS9960ReadReg(reg);
+                        serial.writeLine(reg+": 0x"+val);
+                    }
+                }
+
+                for(reg = 0xE4; reg <= 0xE7; reg++) {
+                    val = this.APDS9960ReadReg(reg);
+                    serial.writeLine(reg+": 0x"+val);
+                }
+                
+            }
+            serial.writeLine("init sensor finish");
         }
 
         /**
@@ -654,7 +704,8 @@ namespace ZjwlGesture {
                     return false;
                 }
                 /* Find the last value in U/D/L/R above the threshold */
-                for( i = gesture_data.total_gestures - 1; i >= 0; i-- ) {
+                for (i = gesture_data.total_gestures - 1; i >= 0; i--) {
+                    
 
                     if( (gesture_data.u_data[i] > GESTURE_THRESHOLD_OUT) &&
                         (gesture_data.d_data[i] > GESTURE_THRESHOLD_OUT) &&
@@ -675,17 +726,41 @@ namespace ZjwlGesture {
             lr_ratio_first = ((l_first - r_first) * 100) / (l_first + r_first);
             ud_ratio_last = ((u_last - d_last) * 100) / (u_last + d_last);
             lr_ratio_last = ((l_last - r_last) * 100) / (l_last + r_last);
-            
-            
+            if (ud_ratio_first==0&&lr_ratio_first==0&&ud_ratio_last==0&&lr_ratio_last==0) { 
+
+                //this.pads9960_init();
+               // this.enableGestureSensor(false);
+            }
+            if (DEBUG) { 
+                serial.writeLine("first Values: " + "U:" + u_first
+                + " D:" + d_first
+                + " L:" + l_first
+                + " R:" + r_first);
+                serial.writeLine("Last Values: " + "U:" + u_last
+                + " D:" + d_last
+                + " L:" + l_last
+                + " R:" + r_last);
+                serial.writeLine("Ratios: " + "UD Fi:" + ud_ratio_first
+                + " UD La:" + ud_ratio_last
+                + " LR Fi:" + lr_ratio_first
+                + " LR La:" + lr_ratio_last);
+                
+            }
+
             /* Determine the difference between the first and last ratios */
             ud_delta = ud_ratio_last - ud_ratio_first;
             lr_delta = lr_ratio_last - lr_ratio_first;
-            
+            if (DEBUG) { 
+                serial.writeLine("Deltas: "+"UD: "+ud_delta+" LR: "+lr_delta);
+            }
 
             /* Accumulate the UD and LR delta values */
             gesture_ud_delta += ud_delta;
             gesture_lr_delta += lr_delta;
-            
+            if (DEBUG) { 
+
+                serial.writeLine("Accumulations: "+"UD: "+gesture_ud_delta+" LR: "+gesture_lr_delta);
+            }
             /* Determine U/D gesture */
             if( gesture_ud_delta >= GESTURE_SENSITIVITY_1 ) {
                 gesture_ud_count = 1;
@@ -738,8 +813,15 @@ namespace ZjwlGesture {
                     }
                 }
             }
-            
-            return false;
+
+            if (DEBUG) { 
+
+                serial.writeLine("UD_CT: " + gesture_ud_count + " LR_CT: " + gesture_lr_count + " NEAR_CT: " + gesture_near_count
+                    + " FAR_CT: " + gesture_far_count);
+                   
+            }
+       
+            return true;
         }
 
         /**
@@ -747,7 +829,11 @@ namespace ZjwlGesture {
          *
          * @return True if near/far event. False otherwise.
          */
-        private decodeGesture():boolean {
+        private decodeGesture(): boolean {
+            
+       
+            serial.writeLine("gesture_state"+gesture_state);
+            serial.writeLine("gesture_ud_count: "+gesture_ud_count+" ; "+"gesture_lr_count: "+gesture_lr_count);
             /* Return if near or far event is detected */
             if( gesture_state == STATE.NEAR_STATE ) {
                 gesture_motion = DIR.DIR_NEAR;
@@ -808,7 +894,12 @@ namespace ZjwlGesture {
             let gstatus: number;
             let motion: number;
             let i: number;
-
+            //this.resetGestureParameters();
+            gesture_data.d_data = pins.createBuffer(32);
+            gesture_data.u_data = pins.createBuffer(32);
+            gesture_data.l_data = pins.createBuffer(32);
+            gesture_data.r_data = pins.createBuffer(32);
+            serial.writeLine("read sensor start");
             /* Make sure that power and gesture is on and data is valid */
             if (!this.isGestureAvailable() || !(this.getMode() & 0b01000001)) {
                 return DIR.DIR_NONE;
@@ -823,25 +914,67 @@ namespace ZjwlGesture {
                 if ((gstatus & APDS9960_GVALID) == APDS9960_GVALID) {
                     /* Read the current FIFO level */
                     fifo_level = this.APDS9960ReadReg(APDS9960_GFLVL);
+
+                    if (DEBUG) {
+                        
+                        serial.writeLine("FIFO Level: "+fifo_level);
+                    }
+                       
                     /* If there's stuff in the FIFO, read it into our data block */
                     if (fifo_level > 0) {
                         bytes_read = this.APDS9960ReadRegBlock(APDS9960_GFIFO_U,
-                                     (fifo_level * 4));
-                        
+                            (fifo_level * 4));
+                          // bytes_read = this.APDS9960ReadRegBlock(APDS9960_GFIFO_U,fifo_level );
 
+
+                        for (let i = 0; i < bytes_read;i++) { 
+
+                            fifo_data[i] = data_buf[i];
+                        }
+   
+                        if (0) {
+                            
+                            serial.writeLine("FIFO Dump: ");
+                            for ( i = 0; i < bytes_read; i++ ) {
+                                serial.writeLine("NO. "+i+" : "+fifo_data[i]); 
+                            }
+                            serial.writeLine("FIFO END");
+            
+                        }
+                                  
+                
                         if (bytes_read >= 4) {
-                            for (i = 0; i < bytes_read; i += 4) {
-                                gesture_data.u_data[gesture_data.index] = fifo_data[i + 0];
-                                gesture_data.d_data[gesture_data.index] = fifo_data[i + 1];
-                                gesture_data.l_data[gesture_data.index] = fifo_data[i + 2];
-                                gesture_data.r_data[gesture_data.index] = fifo_data[i + 3];
+                            for (let ii = 0; ii < bytes_read; ii=ii+4) {
+                                gesture_data.u_data[gesture_data.index] = fifo_data[ii + 0];
+                                gesture_data.d_data[gesture_data.index] = fifo_data[ii + 1];
+                                gesture_data.l_data[gesture_data.index] = fifo_data[ii + 2];
+                                gesture_data.r_data[gesture_data.index] = fifo_data[ii + 3];
                                 gesture_data.index++;
                                 gesture_data.total_gestures++;
                             }
+
+                            if (0) {
+                                
+                                serial.writeLine("Up Data: ");
+                                for ( i = 0; i < gesture_data.total_gestures; i++ ) {
+                                    serial.writeLine(gesture_data.u_data[i].toString());
+                                }
+                                serial.writeLine("Up END");
+                            }
+                           
+
                             /* Filter and process gesture data. Decode near/far state */
                             if (this.processGestureData()) {
                                 if (this.decodeGesture()) {
 
+                                    motion = gesture_motion;
+                                   
+                                    if (DEBUG) {
+                                       
+                                        serial.writeLine("gesture_motion: " + gesture_motion.toString());
+                                    }
+                                    this.resetGestureParameters();
+                                    return motion;
                                 }
                             }
                             /* Reset data */
@@ -857,6 +990,12 @@ namespace ZjwlGesture {
                     basic.pause(30);
                     this.decodeGesture();
                     motion = gesture_motion;
+                    if (DEBUG) {
+                        
+                        serial.writeLine("END: ");
+                        serial.writeLine("gesture_motion"+gesture_motion);
+                    }
+            
                     this.resetGestureParameters();
                     return motion;
                 }
@@ -874,8 +1013,32 @@ namespace ZjwlGesture {
         //% advanced=true
         init() {
             this.pads9960_init();
-            this.enableGestureSensor(true);
+            this.enableGestureSensor(false);
+            if (0) {
+                /* Gesture config register dump */
+                let reg: number = 0x00;
+                let val: number = 0x00;
+                
+                for (reg = 0x80; reg <= 0xAF; reg++) {
+                    if ((reg != 0x82) &&
+                        (reg != 0x8A) &&
+                        (reg != 0x91) &&
+                        (reg != 0xA8) &&
+                        (reg != 0xAC) &&
+                        (reg != 0xAD)) {
+                        val = this.APDS9960ReadReg(reg);
+                        serial.writeLine(reg + ": 0x" + val);
+                    }
+                }
+    
+                for (reg = 0xE4; reg <= 0xE7; reg++) {
+                    val = this.APDS9960ReadReg(reg);
+                    serial.writeLine(reg + ": 0x" + val);
+                }
+                
+            }
         }
+        
 
         /**
          * Detect and recognize the gestures from Grove - Gesture
@@ -886,29 +1049,44 @@ namespace ZjwlGesture {
             let data = 0, result = 0;
 
             switch (this.readGesture()) {
+
+                
                 case DIR.DIR_UP:
+                    serial.writeLine("gseture: " + "UP");
                     result = ZjwlGesture.Up;
                     break;
                 case DIR.DIR_DOWN:
+                    serial.writeLine("gseture: " + "DPWN");
                     result = ZjwlGesture.Down;
                     break;
                 case DIR.DIR_LEFT:
+                    serial.writeLine("gseture: " + "LEFT");
                     result = ZjwlGesture.Left;
                     break;
                 case DIR.DIR_RIGHT:
+                    serial.writeLine("gseture: " + "RIGHT");
                     result = ZjwlGesture.Right;
                     break;
                 case DIR.DIR_NEAR:
+                    serial.writeLine("gseture: " + "NEAR");
                     result = ZjwlGesture.Forward;
                     break;
                 case DIR.DIR_FAR:
+                    serial.writeLine("gseture: " + "FAR");
                     result = ZjwlGesture.Backward;
                     break;
                 default:
 
             }
-
+            serial.writeLine("start gseture: ");
             return result;
+        }
+
+
+        readi2c(addr:number): number {
+       
+            return this.APDS9960ReadReg(addr);
+        
         }
     }
 }
