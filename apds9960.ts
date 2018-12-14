@@ -1,12 +1,12 @@
 
-let DEBUG = 1;
+let DEBUG = 0;
 /* APDS-9960 I2C address */
 let APDS9960_I2C_ADDR = 0x39
 
 /* Gesture parameters */
-let GESTURE_THRESHOLD_OUT = 33
-let GESTURE_SENSITIVITY_1 = 16
-let GESTURE_SENSITIVITY_2 = 16
+let GESTURE_THRESHOLD_OUT = 35
+let GESTURE_SENSITIVITY_1 = 40
+let GESTURE_SENSITIVITY_2 = 20
 
 /* Error code for returned values */
 let ERROR = 0xFF
@@ -247,7 +247,7 @@ namespace ZjwlGesture9960 {
                         lastGesture = gesture;
                         control.raiseEvent(gestureEventId, lastGesture);
                     }
-                    basic.pause(50);
+                    basic.pause(1600);
                 }
             })
     }
@@ -291,17 +291,7 @@ namespace ZjwlGesture9960 {
 
             pins.i2cWriteBuffer(0x39, buf, false);
         }
-        private APDS9960ReadRegBlock1(addr: number,len:number): Buffer {
-            let buf: Buffer = pins.createBuffer(32);
-            buf[0] = addr;
-            pins.i2cWriteBuffer(0x39, buf, false);
-            buf = pins.i2cReadBuffer(0x39, len, false);
-            for (let i = 0; i < len; i = i++) { 
-                serial.writeLine(buf[i].toString());
-            }
-            return buf;
-        }
-
+        
 
         /**
          * @brief Reads a block (array) of bytes from the I2C device and register
@@ -321,8 +311,8 @@ namespace ZjwlGesture9960 {
                 data_buf[i+1] = this.readi2c(0xFd);
                 data_buf[i+2] = this.readi2c(0xFe);
                 data_buf[i + 3] = this.readi2c(0xFf);
-
-                if (1) {
+                basic.pause(10);
+                if (DEBUG) {
                     
                     serial.writeLine(data_buf[i].toString() + " ; "
                                     +data_buf[i+1].toString() + " ; "
@@ -629,7 +619,7 @@ namespace ZjwlGesture9960 {
                 }
                 
             }
-            serial.writeLine("init sensor finish");
+           // serial.writeLine("init sensor finish");
         }
 
         /**
@@ -832,8 +822,8 @@ namespace ZjwlGesture9960 {
         private decodeGesture(): boolean {
             
        
-            serial.writeLine("gesture_state"+gesture_state);
-            serial.writeLine("gesture_ud_count: "+gesture_ud_count+" ; "+"gesture_lr_count: "+gesture_lr_count);
+           //("gesture_state"+gesture_state);
+           // serial.writeLine("gesture_ud_count: "+gesture_ud_count+" ; "+"gesture_lr_count: "+gesture_lr_count);
             /* Return if near or far event is detected */
             if( gesture_state == STATE.NEAR_STATE ) {
                 gesture_motion = DIR.DIR_NEAR;
@@ -899,7 +889,7 @@ namespace ZjwlGesture9960 {
             gesture_data.u_data = pins.createBuffer(32);
             gesture_data.l_data = pins.createBuffer(32);
             gesture_data.r_data = pins.createBuffer(32);
-            serial.writeLine("read sensor start");
+           //("read sensor start");
             /* Make sure that power and gesture is on and data is valid */
             if (!this.isGestureAvailable() || !(this.getMode() & 0b01000001)) {
                 return DIR.DIR_NONE;
@@ -1052,33 +1042,33 @@ namespace ZjwlGesture9960 {
 
                 
                 case DIR.DIR_UP:
-                    serial.writeLine("gseture: " + "UP");
+                    //serial.writeLine("gseture: " + "UP");
                     result = ZjwlGesture.Up;
                     break;
                 case DIR.DIR_DOWN:
-                    serial.writeLine("gseture: " + "DPWN");
+                   // serial.writeLine("gseture: " + "DPWN");
                     result = ZjwlGesture.Down;
                     break;
                 case DIR.DIR_LEFT:
-                    serial.writeLine("gseture: " + "LEFT");
+                    //serial.writeLine("gseture: " + "LEFT");
                     result = ZjwlGesture.Left;
                     break;
                 case DIR.DIR_RIGHT:
-                    serial.writeLine("gseture: " + "RIGHT");
+                   // serial.writeLine("gseture: " + "RIGHT");
                     result = ZjwlGesture.Right;
                     break;
                 case DIR.DIR_NEAR:
-                    serial.writeLine("gseture: " + "NEAR");
+                   // serial.writeLine("gseture: " + "NEAR");
                     result = ZjwlGesture.Forward;
                     break;
                 case DIR.DIR_FAR:
-                    serial.writeLine("gseture: " + "FAR");
+                   // serial.writeLine("gseture: " + "FAR");
                     result = ZjwlGesture.Backward;
                     break;
                 default:
 
             }
-            serial.writeLine("start gseture: ");
+           // serial.writeLine("start gseture: ");
             return result;
         }
 
