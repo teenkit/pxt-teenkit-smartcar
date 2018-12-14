@@ -229,7 +229,7 @@ namespace ZjwlGesture9960 {
      * @param gesture type of gesture to detect
      * @param handler code to run
      */
-    //% blockId=grove_gesture_create_event block="on Gesture|%gesture"
+    //% blockId=grove_gesture_create_event block="姿势|%gesture"
     export function onGesture(gesture: ZjwlGesture , handler: Action) {
         control.onEvent(gestureEventId, gesture, handler);
         let apds9960 = new APDS9960();
