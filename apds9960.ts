@@ -200,26 +200,20 @@ let gesture_motion: number;
  * zjwl Gestures
  */
 enum ZjwlGesture {
-    //% block=None
+    //% block=无
     None = 0,
-    //% block=Right
+    //% block=向右
     Right = 1,
-    //% block=Left
+    //% block=向左
     Left = 2,
-    //% block=Up
+    //% block=向上
     Up = 3,
-    //% block=Down
+    //% block=向下
     Down = 4,
-    //% block=Forward
+    //% block=向前
     Forward = 5,
-    //% block=Backward
+    //% block=向后
     Backward = 6,
-    //% block=Clockwise
-    Clockwise = 7,
-    //% block=Anticlockwise
-    Anticlockwise = 8,
-    //% block=Wave
-    Wave = 9
 }
 
 /**
