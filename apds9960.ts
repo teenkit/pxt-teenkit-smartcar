@@ -337,7 +337,8 @@ namespace ZjwlGesture9960 {
                 if (enable) {
                     reg_val |= (1 << mode);
                 } else {
-                    reg_val &= ~(1 << mode);
+                    //reg_val &= ~(1 << mode);
+		      reg_val = 0x00;
                 }
             } else if (mode == ALL) {
                 if (enable) {
