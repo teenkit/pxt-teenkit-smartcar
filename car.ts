@@ -93,7 +93,7 @@ namespace smartCar {
      */
     //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置马达 %device|动作%act|速度 %speed"
     //% weight=60 blockGap=8
-    //% dat.min=0 dat.max=255
+    //% speed.min=0 speed.max=255
     export function setMotorAction(device: MOTORS, act: MOTOR_ACTION, speed: number): void {
         let buf = pins.createBuffer(3);
         buf[0] = device;
