@@ -1,18 +1,15 @@
 {
-    "name": "pxt-zjwl-apds9960",
+    "name": "pxt-teenkit-smartcar",
     "version": "0.0.0",
-    "description": "gesture recognition,apds9960",
+    "description": "multifunctional smart car",
     "dependencies": {
         "core": "*",
         "radio": "*"
     },
     "files": [
         "README.md",
-        "apds9960.ts"
-    ],
-    "testFiles": [
-        "test.ts"
-    ],
-    "public": false,
+        "car.ts"
+    ]
+    "public": true,
     "license": "MIT"
 }
