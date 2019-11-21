@@ -9,7 +9,7 @@
     "files": [
         "README.md",
         "car.ts"
-    ]
+    ],
     "public": true,
     "license": "MIT"
 }
