@@ -80,22 +80,22 @@ namespace smartCar {
      */
     export enum IRSENSOR {
         //% block="居中"
-        M_IR = 0x09,
+        MIDDLE_IR = 0x09,
         //% block="左侧"
-        L_IR = 0x08,
+        LEFT_IR = 0x08,
         //% block="右侧"
-        R_IR = 0x0A
+        RIGHT_IR = 0x0A
     }
 
     /**
-     * 读取遮挡传感器数值
+     * 读取遮挡传感器数值，返回值为0～255
      * @param sensor [0-255] 红外遮挡传感器位置
      */
 
-    //% blockId = "TEENKIT_CAR_GET_IR_SENSOR_VALUE" block = "读取遮挡传感器数据 %ir"
-    //% weight=81 blockGap=8 advanced=true
+    //% blockId="TEENKIT_CAR_GET_IR_SENSOR_VALUE" block="读取 %ir 遮挡传感器数据"
+    //% weight=99 blockGap=12 advanced=true
     export function getIr(ir: IRSENSOR): number {
-        return getReg(ir, NumberFormat.Int8LE);
+        return getReg(ir, NumberFormat.Int8BE);
 
     }
 
@@ -106,7 +106,7 @@ namespace smartCar {
      */
 
     //% blockId="TEENKIT_CAR_GET_STATUS" block="读取工作状态%opt|数据格式 %format"
-    //% weight=80 blockGap=8  advanced=true
+    //% weight=99 blockGap=12  advanced=true
     export function getCarStatus(opt: MOTOR_STATUS, format: NumberFormat): number {
         return getReg(opt, format);
 
@@ -121,7 +121,7 @@ namespace smartCar {
      * @param speed is motor drive speed range from 0~255
      */
     //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置马达 %device|动作%act|速度 %speed"
-    //% weight=70 blockGap=8
+    //% weight=60 blockGap=8
     //% speed.min=0 speed.max=255
     export function setMotorAction(device: MOTORS, act: MOTOR_ACTION, speed: number): void {
         let buf = pins.createBuffer(3);
@@ -138,7 +138,7 @@ namespace smartCar {
      * @param act is action the LED to take 
      */
     //% blockId="TEENKIT_CAR_LED_ACTION_CONFIG" block="指示灯 %device|%act"
-    //% weight=60 blockGap = 8
+    //% weight=60 blockGap
     export function setLEDAction(device: LEDS, act: LED_ACTION): void {
         let buf = pins.createBuffer(3);
         buf[0] = device;
