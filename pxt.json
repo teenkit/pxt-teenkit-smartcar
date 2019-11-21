@@ -10,6 +10,9 @@
         "README.md",
         "car.ts"
     ],
+    "testFiles": [
+        "test.ts"
+    ],
     "public": true,
     "license": "MIT"
 }
