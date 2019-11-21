@@ -78,13 +78,25 @@ namespace smartCar {
     /**
      * 红外遮挡传感器位置
      */
-    export enum IRSENSOR{
+    export enum IRSENSOR {
         //% block="居中"
-        MIDDLE = 0x09, 
+        M_IR = 0x09,
         //% block="左侧"
-        LEFT = 0x08,
+        L_IR = 0x08,
         //% block="右侧"
-        RIGHT = 0x0A
+        R_IR = 0x0A
+    }
+
+    /**
+     * 读取遮挡传感器数值
+     * @param sensor [0-255] 红外遮挡传感器位置
+     */
+
+    //% blockId = "TEENKIT_CAR_GET_IR_SENSOR_VALUE" block = "读取遮挡传感器数据 %ir"
+    //% weight=81 blockGap=8 advanced=true
+    export function getIr(ir: IRSENSOR): number {
+        return getReg(ir, NumberFormat.Int8LE);
+
     }
 
     /**
@@ -93,23 +105,14 @@ namespace smartCar {
      * @param format 数值长度
      */
 
-    //% blockId="TEENKIT_CAR_GET_STATUS" block="读取工作状态%opt|数据格式%format"
-    //% weight=99 blockGap=8  advanced=true
+    //% blockId="TEENKIT_CAR_GET_STATUS" block="读取工作状态%opt|数据格式 %format"
+    //% weight=80 blockGap=8  advanced=true
     export function getCarStatus(opt: MOTOR_STATUS, format: NumberFormat): number {
         return getReg(opt, format);
 
     }
 
-    /**
-     * 读取遮挡传感器数值
-     * @param sensor 红外遮挡传感器位置
-     */
-    
-    //% blockId = "TEENKIT_CAR_IR_SENSOR_VALUE" block = "读取遮挡传感器数据%sensor"
-    //% weight=99 blockGap=8  advanced=true
-    export function getIrValue(sensor: IRSENSOR): number{
-        return getReg(sensor, NumberFormat.UInt16BE);
-    }
+
     /**
      * 设置智能小车的设备动作
      * 设置智能小车的LED动作
@@ -118,7 +121,7 @@ namespace smartCar {
      * @param speed is motor drive speed range from 0~255
      */
     //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置马达 %device|动作%act|速度 %speed"
-    //% weight=60 blockGap=8
+    //% weight=70 blockGap=8
     //% speed.min=0 speed.max=255
     export function setMotorAction(device: MOTORS, act: MOTOR_ACTION, speed: number): void {
         let buf = pins.createBuffer(3);
@@ -135,7 +138,7 @@ namespace smartCar {
      * @param act is action the LED to take 
      */
     //% blockId="TEENKIT_CAR_LED_ACTION_CONFIG" block="指示灯 %device|%act"
-    //% weight=60 blockGap
+    //% weight=60 blockGap = 8
     export function setLEDAction(device: LEDS, act: LED_ACTION): void {
         let buf = pins.createBuffer(3);
         buf[0] = device;
