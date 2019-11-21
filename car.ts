@@ -36,11 +36,11 @@ namespace smartCar {
     /**
      * car indicator leds
      */
-    export enum LEDS{
+    export enum LEDS {
         //% block="车头灯"
         DDV_LED_FRONT = 0xC0,
         //% block="尾灯"
-        DDV_LED_TAIL = 0x80,        
+        DDV_LED_TAIL = 0x80,
         //% block="示宽灯"
         DDV_LED_SIDE = 0xA0
     }
@@ -56,7 +56,7 @@ namespace smartCar {
         //% block="前进"
         FOWRARD = 0X01,
         //% block="停止"
-        STOP = 0x00,        
+        STOP = 0x00,
         //% block="后退"
         BACKWARD = 0x02,
         //% block="加速"
@@ -65,7 +65,7 @@ namespace smartCar {
         SLOW_DOWN = 0x05
     }
 
-    export enum LED_ACTION{
+    export enum LED_ACTION {
         //% block="打开"
         ON = 0x01,
         //% block="关闭"
@@ -76,7 +76,9 @@ namespace smartCar {
      * @param opt 设备类型
      * @param format 数值长度
      */
-    //%block = "读取工作状态"
+
+    //% blockId="TEENKIT_CAR_GET_STATUS" block="读取工作状态%opt|数据格式%format"
+    //% weight=99 blockGap=8  advanced=true
     export function getCarStatus(opt: MOTOR_STATUS, format: NumberFormat): number {
         return getReg(opt, format);
 
@@ -87,15 +89,16 @@ namespace smartCar {
      * 设置智能小车的LED动作
      * @param device is the motor type
      * @param act is action the motor to take
-     * @Param speed is motor drive speed range from 0~255
+     * @param speed is motor drive speed range from 0~255
      */
     //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置马达 %device|动作%act|速度 %speed"
-    //% weight=60 blockGap
+    //% weight=60 blockGap=8
+    //% dat.min=0 dat.max=255
     export function setMotorAction(device: MOTORS, act: MOTOR_ACTION, speed: number): void {
         let buf = pins.createBuffer(3);
         buf[0] = device;
         buf[1] = device &= act;
-        buf[2] = speed % 256;
+        buf[2] = DecToHex(speed % 256);
         pins.i2cWriteBuffer(CAR_ADR, buf);
     }
 
@@ -130,6 +133,13 @@ namespace smartCar {
     function getReg(reg: number, format: NumberFormat): number {
         pins.i2cWriteNumber(CAR_ADR, reg, NumberFormat.UInt8BE);
         return pins.i2cReadNumber(CAR_ADR, format);
+    }
+
+    /**
+     * convert a Dec data to Hex
+     */
+    function DecToHex(dat: number): number {
+        return Math.idiv(dat, 10) * 16 + (dat % 10)
     }
 
 }
