@@ -45,7 +45,7 @@ namespace smartCar {
     /**
     * set car action
     */
-    export enum action{
+    export enum action_type{
         //% block="停止"
         STOP = 0x00,
         //% block="前进"
@@ -72,17 +72,16 @@ namespace smartCar {
      * @param left is the action the left motor to do
      * @param right is action the right motor to do 
      */
-    //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置 左轮 %left|右轮 %right"
+    //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置 %device|%left|右轮 %right"
     //% weight=60 blockGap
-    export function action(left: action, right: action): void {
-        let buf = pins.createBuffer(8);
-        buf[0] = devices.L_M;
-        buf[1] = devices.L_M &= left;
+    export function action(device: devices,act: action_type, speed: number): void {
+        let buf = pins.createBuffer(3);
+        buf[0] = device;
+        buf[1] = device &= act;
+        buf[2] = DecToHex(speed % 256);
         pins.i2cWriteBuffer(DEV_W_ADR, buf);
         
-        buf[0] = devices.R_M;
-        buf[1] = devices.R_M &= right;
-        pins.i2cWriteBuffer(DEV_W_ADR, buf);
+        
     }
 
     /**
