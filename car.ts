@@ -65,14 +65,30 @@ namespace smartCar {
         SLOW_DOWN = 0x05
     }
 
+    /**
+     * LED灯状态
+     */
     export enum LED_ACTION {
         //% block="打开"
         ON = 0x01,
         //% block="关闭"
         OFF = 0x00
     }
+
     /**
-     * 读取小车的状态
+     * 红外遮挡传感器位置
+     */
+    export enum IRSENSOR{
+        //% block="居中"
+        MIDDLE = 0x09, 
+        //% block="左侧"
+        LEFT = 0x08,
+        //% block="右侧"
+        RIGHT = 0x0A
+    }
+
+    /**
+     * 读取小车的运行状态
      * @param opt 设备类型
      * @param format 数值长度
      */
@@ -84,6 +100,16 @@ namespace smartCar {
 
     }
 
+    /**
+     * 读取遮挡传感器数值
+     * @param sensor 红外遮挡传感器位置
+     */
+    
+    //% blockId = "TEENKIT_CAR_IR_SENSOR_VALUE" block = "读取遮挡传感器数据%sensor"
+    //% weight=99 blockGap=8  advanced=true
+    export function getIrValue(sensor: IRSENSOR): number{
+        return getReg(sensor, NumberFormat.UInt16BE);
+    }
     /**
      * 设置智能小车的设备动作
      * 设置智能小车的LED动作
