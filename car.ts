@@ -6,40 +6,57 @@
 namespace smartCar {
     //iic address of smartcar
     let CAR_ADR = 0x16;
-    
+
     /**
-     * user query car device status options
-     */
-    export enum options {
-        //% block="左轮状态"
-        O_LMS = 0x00,
-        //% block="右轮状态"
-        O_RMS = 0x01,
-        //% block="左轮当前速度"
-        O_LMSPD = 0x02,
-        //% block="右轮当前速度"
-        O_RMSPD = 0x03
-    }
-    /**
-    * smart car devices
-    */
-    export enum devices {
+        * smart car devices
+        */
+    export enum MOTORS {
+        //% block="双轮"
+        DDV_L_R_M = 0x60,
         //% block="左轮"
         DDV_L_M = 0x20,
         //% block="右轮"
-        DDV_R_M = 0x40,
-        //% block="双轮"
-        DDV_L_R_M = 0x60
+        DDV_R_M = 0x40
     }
+
+    /**
+     * user query car device status options
+     */
+    export enum MOTOR_STATUS {
+        //% block="左轮当前状态"
+        O_LMS = 0x00,
+        //% block="右轮当前状态"
+        O_RMS = 0x01,
+        //% block="左轮当前速度"
+        O_LMSPD = 0x03,
+        //% block="右轮当前速度"
+        O_RMSPD = 0x03
+    }
+
+    /**
+     * car indicator leds
+     */
+    export enum LEDS{
+        //% block="车头灯"
+        DDV_LED_FRONT = 0xC0,
+        //% block="尾灯"
+        DDV_LED_TAIL = 0x80,        
+        //% block="示宽灯"
+        DDV_LED_SIDE = 0xA0
+    }
+
+    /**
+     * on car indicator led actions
+     */
 
     /**
     * set car action
     */
-    export enum action_type {
-        //% block="停止"
-        STOP = 0x00,
+    export enum MOTOR_ACTION {
         //% block="前进"
         FOWRARD = 0X01,
+        //% block="停止"
+        STOP = 0x00,        
         //% block="后退"
         BACKWARD = 0x02,
         //% block="加速"
@@ -47,28 +64,53 @@ namespace smartCar {
         //% block="减速"
         SLOW_DOWN = 0x05
     }
+
+    export enum LED_ACTION{
+        //% block="打开"
+        ON = 0x01,
+        //% block="关闭"
+        OFF = 0x00
+    }
     /**
      * 读取小车的状态
-     * @param value 在此处描述”值“, eg: 5
+     * @param opt 设备类型
+     * @param format 数值长度
      */
-    //% block = "读取工作状态"
-    export function getCarStatus(opt: options, format: NumberFormat): number {
-        return getReg(opt,format);
+    //%block = "读取工作状态"
+    export function getCarStatus(opt: MOTOR_STATUS, format: NumberFormat): number {
+        return getReg(opt, format);
 
     }
 
     /**
      * 设置智能小车的设备动作
-     * @param left is the action the left motor to do
-     * @param right is action the right motor to do 
+     * 设置智能小车的LED动作
+     * @param device is the motor type
+     * @param act is action the motor to take
+     * @Param speed is motor drive speed range from 0~255
      */
-    //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置 %device|%left|右轮 %right"
+    //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置马达 %device|动作%act|速度 %speed"
     //% weight=60 blockGap
-    export function setaction(device: devices, act: action_type, speed: number): void {
+    export function setMotorAction(device: MOTORS, act: MOTOR_ACTION, speed: number): void {
         let buf = pins.createBuffer(3);
         buf[0] = device;
         buf[1] = device &= act;
         buf[2] = speed % 256;
+        pins.i2cWriteBuffer(CAR_ADR, buf);
+    }
+
+
+    /**
+     * 设置智能小车的LED动作
+     * @param device is the LED type
+     * @param act is action the LED to take 
+     */
+    //% blockId="TEENKIT_CAR_LED_ACTION_CONFIG" block="指示灯 %device|%act"
+    //% weight=60 blockGap
+    export function setLEDAction(device: LEDS, act: LED_ACTION): void {
+        let buf = pins.createBuffer(3);
+        buf[0] = device;
+        buf[1] = device &= act;
         pins.i2cWriteBuffer(CAR_ADR, buf);
     }
 
@@ -85,10 +127,10 @@ namespace smartCar {
     /**
      * get reg
      */
-    function getReg(reg: number,format: NumberFormat): number {
+    function getReg(reg: number, format: NumberFormat): number {
         pins.i2cWriteNumber(CAR_ADR, reg, NumberFormat.UInt8BE);
         return pins.i2cReadNumber(CAR_ADR, format);
     }
 
 }
- 
+
