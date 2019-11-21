@@ -58,7 +58,7 @@ namespace smartCar {
         SLOW_DOWN = 0x05
     }
     /**
-     * TODO: 在此处描述您的函数
+     * 读取小车的状态
      * @param value 在此处描述”值“, eg: 5
      */
     //% block
@@ -68,11 +68,11 @@ namespace smartCar {
     }
     
     /**
-     * 初始化时钟的日期和时间
+     * 设置智能小车的设备动作
      * @param left is the action the left motor to do
      * @param right is action the right motor to do 
      */
-    //% blockId="DS1388_SET_DATETIME" block="设置 左轮 %left|右轮 %right"
+    //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置 左轮 %left|右轮 %right"
     //% weight=60 blockGap
     export function action(left: action, right: action): void {
         let buf = pins.createBuffer(8);
