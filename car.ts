@@ -8,9 +8,9 @@
 //% weight=100 color=#0fbc11 icon="\uf013"
 namespace smartCar {
     //iic address of write device
-    let DEV_W_ADR = 0x2D;
+    let DEV_W_ADR = 0x2c;
     //iic address of device read
-    let DEV_R_ADR = 0x2D;
+    let DEV_R_ADR = 0x16;
     //状态地址
     let left_motor_status = 0x00;
     let right_motor_status = 0x01;
@@ -31,6 +31,33 @@ namespace smartCar {
         RMSPD = 0x03
     }
     /**
+    * smart car devices
+    */
+    export enum devices{
+        //% block="左轮"
+        L_M = 0x20,
+        //% block="右轮"
+        R_M = 0x40,
+        //% block="双轮"
+        L_R_M = 0x60
+    }
+    
+    /**
+    * set car action
+    */
+    export enum action{
+        //% block="停止"
+        STOP = 0x00,
+        //% block="前进"
+        FOWRARD = 0X01,
+        //% block="后退"
+        BACKWARD =  0x02,
+        //% block="加速"
+        SPEED_UP = 0x04,
+        //% block="减速"
+        SLOW_DOWN = 0x05
+    }
+    /**
      * TODO: 在此处描述您的函数
      * @param value 在此处描述”值“, eg: 5
      */
@@ -38,6 +65,24 @@ namespace smartCar {
     export function getStatus(opt: options): number {
         return getReg(opt);
         
+    }
+    
+    /**
+     * 初始化时钟的日期和时间
+     * @param left is the action the left motor to do
+     * @param right is action the right motor to do 
+     */
+    //% blockId="DS1388_SET_DATETIME" block="设置 左轮 %left|右轮 %right"
+    //% weight=60 blockGap
+    export function action(left: action, right: action): void {
+        let buf = pins.createBuffer(8);
+        buf[0] = devices.L_M;
+        buf[1] = devices.L_M &= left;
+        pins.i2cWriteBuffer(DEV_W_ADR, buf);
+        
+        buf[0] = devices.R_M;
+        buf[1] = devices.R_M &= right;
+        pins.i2cWriteBuffer(DEV_W_ADR, buf);
     }
 
     /**
