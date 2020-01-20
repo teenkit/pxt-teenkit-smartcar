@@ -35,24 +35,27 @@ namespace smartcar {
         left = 0xC1,
         right = 0xC3
     }
-    let Motor_speed = [0x05,0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F];
+    let Motor_speed = [0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F];
 
     /**
      * set reg
      */
-    function setReg(dev: MOTORS,reg: number, dat: number): void {
+    function setReg(dev: MOTORS_WRITE, reg: number, dat: number): void {
         let buf = pins.createBuffer(2);
-        buf[0] = reg;
-        buf[1] = dat;
+        buf.setNumber(NumberFormat.UInt8BE, 0, reg);
+        buf.setNumber(NumberFormat.UInt8BE, 1, dat);
         pins.i2cWriteBuffer(dev, buf);
     }
 
     /**
      * get reg
      */
-    function getReg(dev: MOTORS,reg: number, format: NumberFormat): number {
-        pins.i2cWriteNumber(dev, reg, NumberFormat.UInt8BE);
-        return pins.i2cReadNumber(dev, format);
+    function getReg8(dev: MOTORS, reg: number, format: NumberFormat): number {
+        let buf = pins.createBuffer(1)
+        buf.setNumber(NumberFormat.UInt8BE, 0, reg)
+        pins.i2cWriteBuffer(dev, buf)
+        buf = pins.i2cReadBuffer(dev, 1)
+        return buf.getNumber(NumberFormat.UInt8BE, 0);
     }
 
     /**
@@ -73,9 +76,9 @@ namespace smartcar {
     //% weight=60 blockGap=8
     //% speed.min=0 speed.max=59
     export function setMotorAction(dev: MOTORS, act: MOTOR_MOTION, speed: number): void {
-        basic.showNumber(speed);
+
         let device = MOTORS_WRITE.left;
-        switch(dev){
+        switch (dev) {
             case MOTORS.left:
                 device = MOTORS_WRITE.left;
                 break;
@@ -83,15 +86,24 @@ namespace smartcar {
                 device = MOTORS_WRITE.right;
                 break;
         }
-        basic.showNumber(device);
+
         let buf = pins.createBuffer(3);
-        let spd = Motor_speed[speed] << 2;
 
-        buf[0] = spd | act;
 
-        pins.i2cWriteBuffer(device, buf);
+        let spd = Motor_speed[speed];
+        basic.showNumber(spd);
+        spd = spd << 2;
 
-        basic.showNumber(device);
-        basic.showNumber(buf[0]);
-    } 
+        basic.showNumber(spd);
+
+        spd = spd | act;
+        basic.showNumber(spd);
+        basic.showNumber(DecToHex(spd));
+
+        basic.showNumber(DecToHex(spd));
+
+        setReg(device, 0x00, 0xfe);
+
+
+    }
 }
