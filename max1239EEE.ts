@@ -22,7 +22,7 @@ enum MyEnum {
 
 //% weight=100 color=#0fbc11 icon="\uf013"
 namespace smartcar {
-    let MAX1399 = 0x39;
+    let MAX1399 = 0x35;
     /**
      * setup字节，配置为：11110010。即： 使用内部参考电压，并保持参考电压开启
      */
@@ -34,6 +34,10 @@ namespace smartcar {
     let config_byte = 0xf;
 
     /**
+     * 只读取AIN0的配置:01100001
+     */
+    let config_ain1 = 0x71;
+    /**
      * init infrared block sensor and light sensor
      */
     //% blockId="INFRARED_LIGHT_INITIALIZATION" block="初始化遮挡传感器和光敏传感"
@@ -44,21 +48,34 @@ namespace smartcar {
         buf.setNumber(NumberFormat.UInt8BE, 1, config_byte);
         pins.i2cWriteBuffer(MAX1399, buf);
 
-        basic.showString("ok");
+        serial.writeLine("max1239 initialized");
     }
 
     //% blockId="INFRARED_LIGHT_READ" block="读取全部数据"
     //% weight=61 blockGap=8
-    export function readAll() {
+    export function read() {
         let buf = pins.createBuffer(8);
 
-        buf = pins.i2cReadBuffer(MAX1399, pins.sizeOf(NumberFormat.Int16LE), true);
-        for (let index = 0; index < buf.length; index++) {
-            let val = buf.getNumber(NumberFormat.Int8LE, index);
-            basic.showNumber(index);
-            basic.showNumber(val);
-            serial.writeLine("index: " + index + ": " + val);
+        for (; ;) {
+            buf = pins.i2cReadBuffer(MAX1399, 16);
+
+            let i1 = buf.getNumber(NumberFormat.UInt16BE, 0) & 0xfff;
+            let i2 = buf.getNumber(NumberFormat.UInt16BE, 2) & 0xfff;
+            let i3 = buf.getNumber(NumberFormat.UInt16BE, 4) & 0xfff;
+
+            let l1 = buf.getNumber(NumberFormat.UInt16BE, 6) & 0xfff;
+            let l2 = buf.getNumber(NumberFormat.UInt16BE, 8) & 0xfff;
+            let l3 = buf.getNumber(NumberFormat.UInt16BE, 10) & 0xfff;
+            let l4 = buf.getNumber(NumberFormat.UInt16BE, 12) & 0xfff;
+            let l5 = buf.getNumber(NumberFormat.UInt16BE, 14) & 0xfff;
+
+            serial.writeLine(i1 + " " + i2 + " " + i3 + " ----" + l1 + " " + l2 + " " + l3 + " " + l4 + " " + l5);
+
+            basic.pause(100);
         }
+
+
+
     }
 
     /**
