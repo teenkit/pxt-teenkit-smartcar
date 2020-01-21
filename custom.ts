@@ -23,6 +23,21 @@ enum MOTOR_MOTION {
     //% block="刹车"
     brake = 3
 }
+enum TURN_TYPE {
+    //% block="原地左转"
+    round_left,
+    //% block="原地右转"
+    round_right,
+    //% block="行进中左转"
+    forward_lef,
+    //% block="行进中右转"
+    forward_right,
+    //% block="后退中左转"
+    backward_left,
+    //% block="后退中右转"
+    backward_right
+
+}
 
 /**
  * 自定义图形块
@@ -93,9 +108,106 @@ namespace smartcar {
         }
 
 
-        let leftSpeed = pins.i2cReadNumber(WHEELS.left, NumberFormat.Int8LE);
-        let rightSpeed = pins.i2cReadNumber(WHEELS.right, NumberFormat.Int8LE)
+    }
+    /**
+     * 设置智能小车的转向
+     * 
+     * @param device is the motor type
+     * @param act is action the motor to take
+     * @param speed is motor drive speed range from 0~255
+     */
+    //% blockId="TEENKIT_CAR_TURN" block="转向 %t|速度 %speed"
+    //% weight=60 blockGap=8
+    //% speed.min=0 speed.max=58
+    export function turn(t: TURN_TYPE, speed: number) {
+        let buf = pins.createBuffer(4);
+        buf = pins.i2cReadBuffer(WHEELS.left, 4)
 
-        serial.writeLine("left: " + leftSpeed + " right: " + rightSpeed);
+        serial.writeLine("1: " + buf.getNumber(NumberFormat.Int8BE, 0));
+        serial.writeLine("2: " + buf.getNumber(NumberFormat.Int8BE, 1));
+        serial.writeLine("3: " + buf.getNumber(NumberFormat.Int8BE, 2));
+        serial.writeLine("4: " + buf.getNumber(NumberFormat.Int8BE, 3));
+
+        let lw = pins.createBuffer(2);
+        lw.setNumber(NumberFormat.Int8LE, 0, 0x00);
+
+        let rw = pins.createBuffer(2);
+        rw.setNumber(NumberFormat.Int8LE, 0, 0x00);
+
+        let lspd = Motor_speed[speed];
+        lspd = lspd << 2;
+        let rspd = Motor_speed[speed];
+        rspd = rspd << 2;
+
+        switch (t) {
+            case TURN_TYPE.round_left:
+                lspd = lspd | MOTOR_MOTION.reverse;
+                lw.setNumber(NumberFormat.Int8LE, 1, lspd);
+
+                rspd = rspd | MOTOR_MOTION.forward;
+                rw.setNumber(NumberFormat.Int8LE, 1, rspd);
+
+                pins.i2cWriteBuffer(WHEELS.left, lw);
+                pins.i2cWriteBuffer(WHEELS.right, rw);
+
+                break;
+            case TURN_TYPE.round_right:
+                lspd = lspd | MOTOR_MOTION.forward;
+                lw.setNumber(NumberFormat.Int8LE, 1, lspd);
+
+                rspd = rspd | MOTOR_MOTION.reverse;
+                rw.setNumber(NumberFormat.Int8LE, 1, rspd);
+
+                pins.i2cWriteBuffer(WHEELS.left, lw);
+                pins.i2cWriteBuffer(WHEELS.right, rw);
+
+                break;
+            case TURN_TYPE.forward_lef:
+                lspd = Motor_speed[1];
+                lspd = lspd | MOTOR_MOTION.forward;
+                lw.setNumber(NumberFormat.Int8LE, 1, lspd);
+
+                rspd = rspd | MOTOR_MOTION.forward;
+                rw.setNumber(NumberFormat.Int8LE, 1, rspd);
+
+                pins.i2cWriteBuffer(WHEELS.left, lw);
+                pins.i2cWriteBuffer(WHEELS.right, rw);
+
+                break;
+            case TURN_TYPE.forward_right:
+                lspd = lspd | MOTOR_MOTION.forward;
+                lw.setNumber(NumberFormat.Int8LE, 1, lspd);
+
+                rspd = Motor_speed[1];
+                rspd = rspd | MOTOR_MOTION.forward;
+                rw.setNumber(NumberFormat.Int8LE, 1, rspd);
+
+                pins.i2cWriteBuffer(WHEELS.left, lw);
+                pins.i2cWriteBuffer(WHEELS.right, rw);
+                break;
+            case TURN_TYPE.backward_left:
+                lspd = lspd | MOTOR_MOTION.reverse;
+                lw.setNumber(NumberFormat.Int8LE, 1, lspd);
+
+                rspd = Motor_speed[1];
+                rspd = rspd | MOTOR_MOTION.reverse;
+                rw.setNumber(NumberFormat.Int8LE, 1, rspd);
+
+                pins.i2cWriteBuffer(WHEELS.left, lw);
+                pins.i2cWriteBuffer(WHEELS.right, rw);
+                break;
+            case TURN_TYPE.backward_right:
+                lspd = Motor_speed[1];
+                lspd = lspd | MOTOR_MOTION.reverse;
+                lw.setNumber(NumberFormat.Int8LE, 1, lspd);
+
+                rspd = rspd | MOTOR_MOTION.reverse;
+                rw.setNumber(NumberFormat.Int8LE, 1, rspd);
+
+                pins.i2cWriteBuffer(WHEELS.left, lw);
+                pins.i2cWriteBuffer(WHEELS.right, rw);
+                break;
+
+        }
     }
 }
