@@ -4,11 +4,13 @@
  * 重庆润颐科技有限公司
  * www.rootbrother.com
  */
-enum MOTORS {
+enum WHEELS {
     //% block="左轮"
-    left,
+    left = 0x60,
     //% block="右轮"
-    right
+    right = 0x61,
+    //% block="双轮"
+    left_right
 }
 
 enum MOTOR_MOTION {
@@ -27,20 +29,13 @@ enum MOTOR_MOTION {
  */
 //% weight=100 color=#0fbc11 icon="\uf013"
 namespace smartcar {
-    enum MOTORS_WRITE {
-        left = 0xC0,
-        right = 0xC2
-    }
-    enum MOTORS_READ {
-        left = 0xC1,
-        right = 0xC3
-    }
+
     let Motor_speed = [0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F];
 
     /**
      * set reg
      */
-    function setReg(dev: MOTORS_WRITE, reg: number, dat: number): void {
+    function setReg(dev: WHEELS, reg: number, dat: number): void {
         let buf = pins.createBuffer(2);
         buf.setNumber(NumberFormat.UInt8BE, 0, reg);
         buf.setNumber(NumberFormat.UInt8BE, 1, dat);
@@ -50,7 +45,7 @@ namespace smartcar {
     /**
      * get reg
      */
-    function getReg8(dev: MOTORS, reg: number, format: NumberFormat): number {
+    function getReg8(dev: WHEELS, reg: number, format: NumberFormat): number {
         let buf = pins.createBuffer(1)
         buf.setNumber(NumberFormat.UInt8BE, 0, reg)
         pins.i2cWriteBuffer(dev, buf)
@@ -72,38 +67,35 @@ namespace smartcar {
      * @param act is action the motor to take
      * @param speed is motor drive speed range from 0~255
      */
-    //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置马达 %dev|动作%act|速度 %speed"
+    //% blockId="TEENKIT_CAR_ACTION_CONFIG" block="设置 %dev|动作%act|速度 %speed"
     //% weight=60 blockGap=8
-    //% speed.min=0 speed.max=59
-    export function setMotorAction(dev: MOTORS, act: MOTOR_MOTION, speed: number): void {
+    //% speed.min=0 speed.max=58
+    export function setMotorAction(dev: WHEELS, act: MOTOR_MOTION, speed: number): void {
+        let spd = Motor_speed[speed];
+        spd = spd << 2;
+        spd = spd | act;
 
-        let device = MOTORS_WRITE.left;
+        let dat = pins.createBuffer(2);
+        dat.setNumber(NumberFormat.UInt8BE, 0, 0X00);
+        dat.setNumber(NumberFormat.Int8LE, 1, spd)
+
         switch (dev) {
-            case MOTORS.left:
-                device = MOTORS_WRITE.left;
+            case WHEELS.left:
+                pins.i2cWriteBuffer(dev, dat);
                 break;
-            case MOTORS.right:
-                device = MOTORS_WRITE.right;
+            case WHEELS.right:
+                pins.i2cWriteBuffer(dev, dat);
+                break;
+            case WHEELS.left_right:
+                pins.i2cWriteBuffer(WHEELS.left, dat);
+                pins.i2cWriteBuffer(WHEELS.right, dat);
                 break;
         }
 
-        let buf = pins.createBuffer(3);
 
+        let leftSpeed = pins.i2cReadNumber(WHEELS.left, NumberFormat.Int8LE);
+        let rightSpeed = pins.i2cReadNumber(WHEELS.right, NumberFormat.Int8LE)
 
-        let spd = Motor_speed[speed];
-        basic.showNumber(spd);
-        spd = spd << 2;
-
-        basic.showNumber(spd);
-
-        spd = spd | act;
-        basic.showNumber(spd);
-        basic.showNumber(DecToHex(spd));
-
-        basic.showNumber(DecToHex(spd));
-
-        setReg(device, 0x00, 0xfe);
-
-
+        serial.writeLine("left: " + leftSpeed + " right: " + rightSpeed);
     }
 }
