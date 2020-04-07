@@ -42,7 +42,7 @@ enum TURN_TYPE {
 /**
  * 超声波测距单位
  */
-enum PingUnit {
+enum PU {
     //% block="厘米（cm）"
     Centimeters,
     //% block="微秒（μs）"
@@ -311,23 +311,24 @@ namespace rainbow_samart_car {
     //% blockId=sonar_ping block="障碍物距离 单位 %unit"
     //% weight=100 blockGap=8
     //% subcategory=传感器
-    export function ping(unit: PingUnit, maxCmDistance = 500): number {
+    export function pingDistance(unit: PU, maxCmDistance = 500): number {
         // send pulse
-        pins.setPull(15, PinPullMode.PullNone);
-        pins.digitalWritePin(15, 0);
+        pins.setPull(DigitalPin.P15, PinPullMode.PullNone);
+        pins.digitalWritePin(DigitalPin.P15, 0);
         control.waitMicros(2);
-        pins.digitalWritePin(15, 1);
+        pins.digitalWritePin(DigitalPin.P15, 1);
         control.waitMicros(10);
-        pins.digitalWritePin(15, 0);
+        pins.digitalWritePin(DigitalPin.P15, 0);
 
         // read pulse
-        const d = pins.pulseIn(14, PulseValue.High, maxCmDistance * 58);
+        const d = pins.pulseIn(DigitalPin.P14, PulseValue.High, maxCmDistance * 58);
 
         switch (unit) {
-            case PingUnit.Centimeters: return Math.idiv(d, 58);
-            case PingUnit.Inches: return Math.idiv(d, 148);
+            case PU.Centimeters: return Math.idiv(d, 58);
+            case PU.Inches: return Math.idiv(d, 148);
             default: return d;
         }
+
     }
 
     let ir_inited_sn = false;
@@ -423,6 +424,5 @@ namespace rainbow_samart_car {
                 return 0;
 
         }
-
     }
 }
