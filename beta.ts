@@ -79,38 +79,38 @@ enum light_sensor {
 
 /** NEOPIXEL彩灯 */
 enum CarNeoPixelColors {
-    //% block=红色
+    //% block="红色"
     Red = 0xFF0000,
-    //% block=橙色
+    //% block="橙色"
     Orange = 0xFFA500,
-    //% block=黄色
+    //% block="黄色"
     Yellow = 0xFFFF00,
-    //% block=绿色
+    //% block="绿色"
     Green = 0x00FF00,
-    //% block=蓝色
+    //% block="蓝色"
     Blue = 0x0000FF,
-    //% block=靛蓝色
+    //% block="靛蓝色"
     Indigo = 0x4b0082,
-    //% block=紫罗兰色
+    //% block="紫罗兰色"
     Violet = 0x8a2be2,
-    //% block=紫色
+    //% block="紫色"
     Purple = 0xFF00FF,
-    //% block=白色
+    //% block="白色"
     White = 0xFFFFFF,
-    //% block=黑色
+    //% block="黑色"
     Black = 0x000000
 }
 /**
  * 色彩传感器数值
  */
 enum R_G_B {
-    //% block=红
+    //% block="红"
     RED,
-    //% block=绿
+    //% block="绿"
     GREEN,
-    //% block=蓝
+    //% block="蓝"
     BLUE,
-    //% block=全部
+    //% block="全部"
     CLEAR
 }
 
@@ -176,34 +176,7 @@ namespace rainbow_samart_car {
         CounterClockwise,
         Shortest
     }
-    /**
-     * set reg
-     */
-    function setReg(dev: WHEELS, reg: number, dat: number): void {
-        let buf = pins.createBuffer(2);
-        buf.setNumber(NumberFormat.UInt8BE, 0, reg);
-        buf.setNumber(NumberFormat.UInt8BE, 1, dat);
-        pins.i2cWriteBuffer(dev, buf);
-    }
-
-    /**
-     * get reg
-     */
-    function getReg8(dev: WHEELS, reg: number): number {
-        let buf = pins.createBuffer(1)
-        buf.setNumber(NumberFormat.UInt8BE, 0, reg)
-        pins.i2cWriteBuffer(dev, buf)
-        buf = pins.i2cReadBuffer(dev, 1)
-        return buf.getNumber(NumberFormat.UInt8BE, 0);
-    }
-
-    /**
-     * convert a Dec data to Hex
-     */
-    function DecToHex(dat: number): number {
-        return Math.idiv(dat, 10) * 16 + (dat % 10)
-    }
-
+    
     /**
      * 停止运动
      * 
@@ -449,7 +422,7 @@ namespace rainbow_samart_car {
      * 读取车身周围的光线强度
      */
     //% blockId="CAR_AMBIENT_LIGHT_SENSOR" block="%pos 光线强度"
-    //% weight=80 blockGap=8
+    //% weight=80 blockGap=28
     //% subcategory=传感器
     export function readSurroundingLight(pos: light_sensor): number {
         let buf = pins.createBuffer(1);
@@ -600,7 +573,7 @@ namespace rainbow_samart_car {
         //% weight=79
         //% parts="neopixel"
         //% subcategory=灯光
-        show():void {
+        show(): void {
             ws2812b.sendBuffer(this.buf, this.pin);
         }
         /**
@@ -971,18 +944,15 @@ namespace rainbow_samart_car {
 
     let LCS_integration_time_val = 0;
 
-    export class TCS34725 {
-
-        // I2C functions
-
-        I2C_WriteReg8(addr: number, reg: number, val: number) {
+ //   export class TCS34725 {
+        function I2C_WriteReg8(addr: number, reg: number, val: number) {
             let buf = pins.createBuffer(2)
             buf.setNumber(NumberFormat.UInt8BE, 0, reg)
             buf.setNumber(NumberFormat.UInt8BE, 1, val)
             pins.i2cWriteBuffer(addr, buf)
         }
 
-        I2C_ReadReg8(addr: number, reg: number): number {
+        function I2C_ReadReg8(addr: number, reg: number): number {
             let buf = pins.createBuffer(1)
             buf.setNumber(NumberFormat.UInt8BE, 0, reg)
             pins.i2cWriteBuffer(addr, buf)
@@ -990,7 +960,7 @@ namespace rainbow_samart_car {
             return buf.getNumber(NumberFormat.UInt8BE, 0);
         }
 
-        I2C_ReadReg16(addr: number, reg: number): number {
+        function I2C_ReadReg16(addr: number, reg: number): number {
             let buf = pins.createBuffer(1)
             buf.setNumber(NumberFormat.UInt8BE, 0, reg)
             pins.i2cWriteBuffer(addr, buf)
@@ -999,88 +969,96 @@ namespace rainbow_samart_car {
             return ((buf.getNumber(NumberFormat.UInt8BE, 1) << 8) | buf.getNumber(NumberFormat.UInt8BE, 0));
         }
 
-
-        LCS_initialize() {
+        //% blockId="initialize_color_sensor" block="开启颜色传感器"
+        //% weight=70 blockGap=8
+        //% subcategory=传感器
+        export function LCS_initialize() {
             // Make sure we're connected to the right sensor.
-            let chip_id = this.I2C_ReadReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ID))
+            let chip_id = I2C_ReadReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ID))
 
             if (chip_id != 0x44) {
                 return // Incorrect chip ID
             }
 
             // Set default integration time and gain.
-            this.LCS_set_integration_time(0.0048)
-            this.LCS_set_gain(LCS_Constants.GAIN_16X)
+            LCS_set_integration_time(0.0048)
+            LCS_set_gain(LCS_Constants.GAIN_16X)
 
             // Enable the device (by default, the device is in power down mode on bootup).
-            this.LCS_enable()
+            LCS_enable()
+
+            //补光灯
+            let al = new TeenkitCarStrip();
+            let stride = CarNeoPixelMode.RGB;
+            al.buf = pins.createBuffer(4 * stride);
+            al.start = 0;
+            al._length = 4;
+            al._mode = CarNeoPixelMode.RGB;
+            al._matrixWidth = 0;
+            al.setBrightness(255)
+            al.setPin(DigitalPin.P13)
+
+            al.showColor(CarNeoPixelColors.White);
         }
 
-        LCS_enable() {
+        function LCS_enable() {
             // Set the power and enable bits.
-            this.I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE), LCS_Constants.ENABLE_PON)
+            I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE), LCS_Constants.ENABLE_PON)
             basic.pause(10) // not sure if this is right    time.sleep(0.01) // FIXME delay for 10ms
 
-            this.I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE), (LCS_Constants.ENABLE_PON | LCS_Constants.ENABLE_AEN))
+            I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE), (LCS_Constants.ENABLE_PON | LCS_Constants.ENABLE_AEN))
         }
 
-        LCS_set_integration_time(time: number) {
+        function LCS_set_integration_time(time: number) {
             let val = 0x100 - (time / 0.0024) // FIXME was cast to int type
             if (val > 255) {
                 val = 255
             } else if (val < 0) {
                 val = 0
             }
-            this.I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ATIME), val)
+            I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ATIME), val)
             LCS_integration_time_val = val
         }
 
-        LCS_set_gain(gain: number) {
-            this.I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.CONTROL), gain)
+        function LCS_set_gain(gain: number) {
+            I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.CONTROL), gain)
         }
 
 
-        LCS_set_led_state(state: boolean) {
-            this.I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.PERS), LCS_Constants.PERS_NONE)
-            let val = this.I2C_ReadReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE))
+        function LCS_set_led_state(state: boolean) {
+            I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.PERS), LCS_Constants.PERS_NONE)
+            let val = I2C_ReadReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE))
             if (state) {
                 val |= LCS_Constants.ENABLE_AIEN
             } else {
                 val &= ~LCS_Constants.ENABLE_AIEN
             }
-            this.I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE), val)
+            I2C_WriteReg8(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.ENABLE), val)
 
             basic.pause(2 * (256 - LCS_integration_time_val) * 2.4) // delay for long enough for there to be new (post-change) complete values available
         }
 
 
-        //% blockId="colorType" block="颜色 %colorType"
-        //% weight=67 blockGap=8
-        //% subcategory=传感器
-        colorType(colorType: R_G_B): R_G_B {
-            return colorType;
-        }
-
         /**
         * 从色彩传感器读取颜色值 
         * @param tp 指定读取的RGB颜色类型
         */
-        //% blockId="GET_COLOR_SENSOR_R_G_B_DATA" block="读取RGB值 %tp"
+        //% blockId="GET_COLOR_SENSOR_R_G_B_DATA" block="读取色彩传感器RGB值 %tp"
         //% weight=69 blockGap=8
         //% subcategory=传感器
-        getColorData(tp: R_G_B): number {
+        export function getColorData(tp: R_G_B): number {
             basic.pause((256 - LCS_integration_time_val) * 2.4);
-            let sum = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.CDATAL));
+            let sum = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.CDATAL));
             let vue = 0;
             switch (tp) {
                 case R_G_B.RED:
-                    vue = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.RDATAL));
+                    vue = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.RDATAL));
                     break;
                 case R_G_B.GREEN:
-                    vue = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.GDATAL));
+                    vue = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.GDATAL));
                     break;
                 case R_G_B.BLUE:
-                    vue = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.BDATAL));
+                    vue = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.BDATAL));
                     break;
                 case R_G_B.CLEAR:
                     return sum;
@@ -1092,7 +1070,7 @@ namespace rainbow_samart_car {
         }
 
 
-        LCS_get_raw_data(delay: boolean = false): number[] {
+        function LCS_get_raw_data(delay: boolean = false): number[] {
             if (delay) {
                 // Delay for the integration time to allow reading immediately after the previous read.
                 basic.pause((256 - LCS_integration_time_val) * 2.4)
@@ -1100,10 +1078,10 @@ namespace rainbow_samart_car {
 
             let div = (256 - LCS_integration_time_val) * 1024
             let rgbc = [0, 0, 0, 0]
-            rgbc[0] = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.RDATAL)) / div
-            rgbc[1] = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.GDATAL)) / div
-            rgbc[2] = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.BDATAL)) / div
-            rgbc[3] = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.CDATAL)) / div
+            rgbc[0] = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.RDATAL)) / div
+            rgbc[1] = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.GDATAL)) / div
+            rgbc[2] = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.BDATAL)) / div
+            rgbc[3] = I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.CDATAL)) / div
             if (rgbc[0] > 1) {
                 rgbc[0] = 1
             }
@@ -1118,27 +1096,17 @@ namespace rainbow_samart_car {
             }
             return rgbc
         }
-    }
 
-    //% blockId="initialize_sensor" block="开启颜色传感器"
-    //% weight=70 blockGap=8
-    //% subcategory=传感器
-    export function init_color_sensor(): void {
-        let csr = new TCS34725();
-        csr.LCS_initialize();
 
-        //补光灯
-        let al = new TeenkitCarStrip();
-        let stride = CarNeoPixelMode.RGB;
-        al.buf = pins.createBuffer(4 * stride);
-        al.start = 0;
-        al._length = 4;
-        al._mode = CarNeoPixelMode.RGB;
-        al._matrixWidth = 0;
-        al.setBrightness(255)
-        al.setPin(DigitalPin.P13)
+        //% blockId="colorType" block="色彩传感器输出颜色 %colorType"
+        //% weight=67 blockGap=8
+        //% subcategory=传感器
+        export function colorType(colorType: R_G_B): R_G_B {
+            return colorType;
+        }
 
-        al.showColor(CarNeoPixelColors.White);
+    // }
+    // //end class TCS34725
 
-    }
+    
 }
