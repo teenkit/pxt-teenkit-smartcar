@@ -105,13 +105,13 @@ enum CarNeoPixelColors {
  */
 enum R_G_B {
     //% block=红
-    RED = 1,
+    RED,
     //% block=绿
-    GREEN = 2,
+    GREEN,
     //% block=蓝
-    BLUE = 3,
+    BLUE,
     //% block=全部
-    CLEAR = 4
+    CLEAR
 }
 
 /**
@@ -600,7 +600,7 @@ namespace rainbow_samart_car {
         //% weight=79
         //% parts="neopixel"
         //% subcategory=灯光
-        show() {
+        show():void {
             ws2812b.sendBuffer(this.buf, this.pin);
         }
         /**
@@ -969,7 +969,7 @@ namespace rainbow_samart_car {
         GAIN_60X = 0x03  // 60x gain
     }
 
-    let LCS_integration_time_val = 0
+    let LCS_integration_time_val = 0;
 
     export class TCS34725 {
 
@@ -1075,15 +1075,12 @@ namespace rainbow_samart_car {
             switch (tp) {
                 case R_G_B.RED:
                     vue = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.RDATAL));
-
                     break;
                 case R_G_B.GREEN:
                     vue = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.GDATAL));
-
                     break;
                 case R_G_B.BLUE:
                     vue = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.BDATAL));
-
                     break;
                 case R_G_B.CLEAR:
                     return sum;
@@ -1091,7 +1088,6 @@ namespace rainbow_samart_car {
 
             }
             vue = Math.floor(vue / sum * 255);
-
             return vue;
         }
 
