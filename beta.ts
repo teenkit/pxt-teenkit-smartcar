@@ -61,6 +61,21 @@ enum IrSensor {
     //% block="右侧"
     right
 }
+/**
+ * 光敏
+ */
+enum light_sensor {
+    //% block="前方"
+    front,
+    //% block="左前方"
+    front_left,
+    //% block="右前方"
+    front_right,
+    //% block="左后方"
+    rear_left,
+    //% block="右后方"
+    rear_right
+}
 
 /**
  * 自定义图形块
@@ -84,17 +99,27 @@ namespace rainbow_samart_car {
      */
     let ir_setup = 0xf2;
     /**
-     * config字节，配置为： 00000101。 即采取从AIN6扫描到AIN10的扫描模式，和single-end的转换模式
+     * config字节，配置为： 00000101。 即采取从AIN0扫描到AIN2的扫描模式，和single-end的转换模式
      */
     let ir_config_sn = 0x5;
+    /**
+     * config字节，配置为： 00100001。 convert 8 times
+     */
+    let ir_config_l = 0x21;
+    /**
+     * config字节，配置为： 00100011。 convert 8 times
+     */
+    let ir_config_m = 0x23;
+    /**
+     * config字节，配置为： 00100101。 convert 8 times
+     */
+    let ir_config_r = 0x25;
 
     /**
-     * config字节，配置为： 00000100。 即采取从AIN6扫描到AIN10的扫描模式，和differential的转换模式
+     * 读取光敏电阻数模转换配置：01010101。
+     * 
      */
-    let ir_config_dif = 0x5;
-
-
-
+    let ad_config_light = 0x55;
     /**
      * set reg
      */
@@ -310,24 +335,21 @@ namespace rainbow_samart_car {
      * single-end模式配置
      */
     function sn_init_max1239() {
-        let buf = pins.createBuffer(2);
+        let buf = pins.createBuffer(1);
         buf.setNumber(NumberFormat.UInt8BE, 0, ir_setup);
-        buf.setNumber(NumberFormat.UInt8BE, 1, ir_config_sn);
         pins.i2cWriteBuffer(MAX1239, buf);
-
     }
-    let ir_inited_dif = false;
     /**
-     * differential 模式配置
+     * 配置光线传感器数据读取模式
      */
-    function dif_init_max1239() {
+    let light_inited = false;
+    function initCarLightSensorAd() {
         let buf = pins.createBuffer(2);
         buf.setNumber(NumberFormat.UInt8BE, 0, ir_setup);
-        buf.setNumber(NumberFormat.UInt8BE, 1, ir_config_dif);
+        buf.setNumber(NumberFormat.UInt8BE, 1, ad_config_light);
+
         pins.i2cWriteBuffer(MAX1239, buf);
-
     }
-
     /**
      * 读取垂直红外遮挡传感器数值，当传感器指向深色表面时，由于红外线被吸收，反射值较低。
      */
@@ -335,27 +357,31 @@ namespace rainbow_samart_car {
     //% weight=60 blockGap=8
     //% subcategory=传感器
     export function readIrValue(sensor: IrSensor): number {
+        let buf = pins.createBuffer(1);
+        let dbuf = pins.createBuffer(2);
         if (!ir_inited_sn) {
-
+            sn_init_max1239();
+            ir_inited_sn = true;
         }
-        sn_init_max1239();
-        ir_inited_sn = true;
-
-        let buf = pins.createBuffer(8);
-        buf = pins.i2cReadBuffer(MAX1239, 8);
-
-        serial.writeNumber(buf.getNumber(NumberFormat.UInt16BE, 6));
-        serial.writeLine("");
 
         switch (sensor) {
             case IrSensor.head:
-                return buf.getNumber(NumberFormat.UInt16BE, 2) & 0xff;
+                buf.setNumber(NumberFormat.UInt8BE, 0, ir_config_m);
+                pins.i2cWriteBuffer(MAX1239, buf);
+                dbuf = pins.i2cReadBuffer(MAX1239, 2);
+                return dbuf.getNumber(NumberFormat.UInt16BE, 0) & 0xfff;
                 break;
             case IrSensor.left:
-                return buf.getNumber(NumberFormat.UInt16BE, 0) & 0xff;
+                buf.setNumber(NumberFormat.UInt8BE, 0, ir_config_l);
+                pins.i2cWriteBuffer(MAX1239, buf);
+                dbuf = pins.i2cReadBuffer(MAX1239, 2);
+                return dbuf.getNumber(NumberFormat.UInt16BE, 0) & 0xfff;
                 break;
             case IrSensor.right:
-                return buf.getNumber(NumberFormat.UInt16BE, 4) & 0xff;
+                buf.setNumber(NumberFormat.UInt8BE, 0, ir_config_r);
+                pins.i2cWriteBuffer(MAX1239, buf);
+                dbuf = pins.i2cReadBuffer(MAX1239, 2);
+                return dbuf.getNumber(NumberFormat.UInt16BE, 0) & 0xfff;
                 break;
             default:
                 return 0;
@@ -363,30 +389,40 @@ namespace rainbow_samart_car {
     }
 
     /**
-     * 读取垂直红外遮挡传感器变化量，当传感器指向深色表面时，由于红外线被吸收，反射值较低。
+     * 读取车身周围的光线强度
      */
-    //% blockId="INFRARED_SENSOR_DIF_READ_ACTION" block="读取 %sensor 垂直红外反射变化量"
+    //% blockId="CAR_AMBIENT_LIGHT_SENSOR" block="%pos 光线强度"
     //% weight=50 blockGap=8
     //% subcategory=传感器
-    export function readIrValueChange(sensor: IrSensor): number {
-        if (!ir_inited_dif) {
-            dif_init_max1239();
-            ir_inited_dif = true;
+    export function readSurroundingLight(pos: light_sensor): number {
+        let buf = pins.createBuffer(1);
+        let dbuf = pins.createBuffer(10);
+        if (!light_inited) {
+            initCarLightSensorAd();
+            light_inited = true;
         }
-        let buf = pins.createBuffer(6);
-        buf = pins.i2cReadBuffer(MAX1239, 6);
-        switch (sensor) {
-            case IrSensor.head:
-                return buf.getNumber(NumberFormat.UInt16BE, 2) & 0xff;
+        dbuf = pins.i2cReadBuffer(MAX1239, 10);
+
+        switch (pos) {
+            case light_sensor.rear_left:
+                return dbuf.getNumber(NumberFormat.UInt16BE, 0) & 0xfff;
                 break;
-            case IrSensor.left:
-                return buf.getNumber(NumberFormat.UInt16BE, 0) & 0xff;
+            case light_sensor.front_left:
+                return dbuf.getNumber(NumberFormat.UInt16BE, 2) & 0xfff;
                 break;
-            case IrSensor.right:
-                return buf.getNumber(NumberFormat.UInt16BE, 4) & 0xff;
+            case light_sensor.front:
+                return dbuf.getNumber(NumberFormat.UInt16BE, 4) & 0xfff;
+                break;
+            case light_sensor.front_right:
+                return dbuf.getNumber(NumberFormat.UInt16BE, 6) & 0xfff;
+                break;
+            case light_sensor.rear_right:
+                return dbuf.getNumber(NumberFormat.UInt16BE, 8) & 0xfff;
                 break;
             default:
                 return 0;
+
         }
+
     }
 }
