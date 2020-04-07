@@ -104,13 +104,13 @@ enum NeoPixelColors {
  * 色彩传感器数值
  */
 enum R_G_B {
-    //% block="红"
+    //% block=红
     RED,
-    //% block="绿"
+    //% block=绿
     GREEN,
-    //% block="蓝"
+    //% block=蓝
     BLUE,
-    //% block="全部"
+    //% block=全部
     CLEAR
 }
 
@@ -804,7 +804,7 @@ namespace rainbow_samart_car {
         strip._length = 6;
         strip._mode = mode;
         strip._matrixWidth = 0;
-        strip.setBrightness(128)
+        strip.setBrightness(255)
         strip.setPin(DigitalPin.P12)
         //clear all
         strip.clear();
@@ -1053,7 +1053,7 @@ namespace rainbow_samart_car {
             basic.pause(2 * (256 - LCS_integration_time_val) * 2.4) // delay for long enough for there to be new (post-change) complete values available
         }
 
-        
+
         //% blockId="colorType" block="颜色 %colorType"
         //% weight=67 blockGap=8
         //% subcategory=传感器
@@ -1061,14 +1061,18 @@ namespace rainbow_samart_car {
             return colorType;
         }
 
-        //% blockId="getColorSensorData" block="读取RGB值 %color"
+        /**
+        * 从色彩传感器读取颜色值 
+        * @param tp 指定读取的RGB颜色类型
+        */
+        //% blockId="GET_COLOR_SENSOR_R_G_B_DATA" block="读取RGB值 %tp"
         //% weight=69 blockGap=8
         //% subcategory=传感器
-        getColorData(color: R_G_B): number {
+        getColorData(tp: R_G_B): number {
             basic.pause((256 - LCS_integration_time_val) * 2.4);
             let sum = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.CDATAL));
             let vue = 0;
-            switch (color) {
+            switch (tp) {
                 case R_G_B.RED:
                     vue = this.I2C_ReadReg16(LCS_Constants.ADDRESS, (LCS_Constants.COMMAND_BIT | LCS_Constants.RDATAL));
 
@@ -1121,7 +1125,7 @@ namespace rainbow_samart_car {
     }
 
     //% blockId="initialize_sensor" block="开启颜色传感器"
-    //% weight=70 blockGap=18
+    //% weight=70 blockGap=8
     //% subcategory=传感器
     export function init_color_sensor(): void {
         let csr = new TCS34725();
@@ -1129,15 +1133,16 @@ namespace rainbow_samart_car {
 
         //补光灯
         let al = new TeenkitCarStrip();
-        let stride = NeoPixelMode.RGBW;
+        let stride = NeoPixelMode.RGB;
         al.buf = pins.createBuffer(4 * stride);
         al.start = 0;
         al._length = 4;
-        al._mode = NeoPixelMode.RGBW;
+        al._mode = NeoPixelMode.RGB;
         al._matrixWidth = 0;
         al.setBrightness(255)
         al.setPin(DigitalPin.P13)
+
         al.showColor(NeoPixelColors.White);
-        
+
     }
 }
