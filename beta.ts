@@ -78,7 +78,7 @@ enum light_sensor {
 }
 
 /** NEOPIXEL彩灯 */
-enum NeoPixelColors {
+enum CarNeoPixelColors {
     //% block=红色
     Red = 0xFF0000,
     //% block=橙色
@@ -105,19 +105,19 @@ enum NeoPixelColors {
  */
 enum R_G_B {
     //% block=红
-    RED,
+    RED = 1,
     //% block=绿
-    GREEN,
+    GREEN = 2,
     //% block=蓝
-    BLUE,
+    BLUE = 3,
     //% block=全部
-    CLEAR
+    CLEAR = 4
 }
 
 /**
  * Different modes for RGB or RGB+W NeoPixel strips
  */
-enum NeoPixelMode {
+enum CarNeoPixelMode {
     //% block="RGB (GRB format)"
     RGB = 0,
     //% block="RGB+W"
@@ -488,7 +488,7 @@ namespace rainbow_samart_car {
         brightness: number;
         start: number; // start offset in LED strip
         _length: number; // number of LEDs
-        _mode: NeoPixelMode;
+        _mode: CarNeoPixelMode;
         _matrixWidth: number; // number of leds in a matrix - if any
 
         /**
@@ -499,7 +499,7 @@ namespace rainbow_samart_car {
         //% weight=85 blockGap=8
         //% parts="neopixel"
         //% subcategory=灯光
-        showColor(rgb: NeoPixelColors) {
+        showColor(rgb: CarNeoPixelColors) {
             rgb = rgb >> 0;
             this.setAllRGB(rgb);
             ws2812b.sendBuffer(this.buf, this.pin);
@@ -517,14 +517,14 @@ namespace rainbow_samart_car {
                 blue = (blue * br) >> 8;
             }
             const end = this.start + this._length;
-            const stride = this._mode === NeoPixelMode.RGBW ? 4 : 3;
+            const stride = this._mode === CarNeoPixelMode.RGBW ? 4 : 3;
             for (let i = this.start; i < end; ++i) {
                 this.setBufferRGB(i * stride, red, green, blue)
             }
         }
 
         private setBufferRGB(offset: number, red: number, green: number, blue: number): void {
-            if (this._mode === NeoPixelMode.RGB_RGB) {
+            if (this._mode === CarNeoPixelMode.RGB_RGB) {
                 this.buf[offset + 0] = red;
                 this.buf[offset + 1] = green;
             } else {
@@ -536,7 +536,7 @@ namespace rainbow_samart_car {
 
 
         private setAllW(white: number) {
-            if (this._mode !== NeoPixelMode.RGBW)
+            if (this._mode !== CarNeoPixelMode.RGBW)
                 return;
 
             let br = this.brightness;
@@ -555,7 +555,7 @@ namespace rainbow_samart_car {
                 || pixeloffset >= this._length)
                 return;
 
-            let stride = this._mode === NeoPixelMode.RGBW ? 4 : 3;
+            let stride = this._mode === CarNeoPixelMode.RGBW ? 4 : 3;
             pixeloffset = (pixeloffset + this.start) * stride;
 
             let red = unpackR(rgb);
@@ -571,7 +571,7 @@ namespace rainbow_samart_car {
             this.setBufferRGB(pixeloffset, red, green, blue)
         }
         private setPixelW(pixeloffset: number, white: number): void {
-            if (this._mode !== NeoPixelMode.RGBW)
+            if (this._mode !== CarNeoPixelMode.RGBW)
                 return;
 
             if (pixeloffset < 0
@@ -611,7 +611,7 @@ namespace rainbow_samart_car {
         //% parts="neopixel"
         //% subcategory=灯光
         clear(): void {
-            const stride = this._mode === NeoPixelMode.RGBW ? 4 : 3;
+            const stride = this._mode === CarNeoPixelMode.RGBW ? 4 : 3;
             this.buf.fill(0, this.start * stride, this._length * stride);
             this.show();
         }
@@ -641,7 +641,7 @@ namespace rainbow_samart_car {
         //% subcategory=灯光
         car_neopixel_rotate(offset: number = 1): void {
             offset = offset >> 0;
-            const stride = this._mode === NeoPixelMode.RGBW ? 4 : 3;
+            const stride = this._mode === CarNeoPixelMode.RGBW ? 4 : 3;
             this.buf.rotate(-offset * stride, this.start * stride, this._length * stride)
             this.show();
         }
@@ -666,7 +666,7 @@ namespace rainbow_samart_car {
         //% parts="neopixel"
         //% subcategory=灯光
         easeBrightness(): void {
-            const stride = this._mode === NeoPixelMode.RGBW ? 4 : 3;
+            const stride = this._mode === CarNeoPixelMode.RGBW ? 4 : 3;
             const br = this.brightness;
             const buf = this.buf;
             const end = this.start + this._length;
@@ -697,7 +697,7 @@ namespace rainbow_samart_car {
         //% subcategory=灯光
         shift(offset: number = 1): void {
             offset = offset >> 0;
-            const stride = this._mode === NeoPixelMode.RGBW ? 4 : 3;
+            const stride = this._mode === CarNeoPixelMode.RGBW ? 4 : 3;
             this.buf.shift(-offset * stride, this.start * stride, this._length * stride)
             this.show();
         }
@@ -796,9 +796,9 @@ namespace rainbow_samart_car {
     //% trackArgs=0,2
     //% blockSetVariable=strip
     //% subcategory=灯光
-    export function createBottomRGBStrip(mode: NeoPixelMode): TeenkitCarStrip {
+    export function createBottomRGBStrip(mode: CarNeoPixelMode): TeenkitCarStrip {
         let strip = new TeenkitCarStrip();
-        let stride = mode === NeoPixelMode.RGBW ? 4 : 3;
+        let stride = mode === CarNeoPixelMode.RGBW ? 4 : 3;
         strip.buf = pins.createBuffer(6 * stride);
         strip.start = 0;
         strip._length = 6;
@@ -820,9 +820,9 @@ namespace rainbow_samart_car {
     //% trackArgs=0,2
     //% blockSetVariable=strip2
     //% subcategory=灯光
-    export function createHeadRGBStrip(mode: NeoPixelMode): TeenkitCarStrip {
+    export function createHeadRGBStrip(mode: CarNeoPixelMode): TeenkitCarStrip {
         let strip = new TeenkitCarStrip();
-        let stride = mode === NeoPixelMode.RGBW ? 4 : 3;
+        let stride = mode === CarNeoPixelMode.RGBW ? 4 : 3;
         strip.buf = pins.createBuffer(2 * stride);
         strip.start = 0;
         strip._length = 2;
@@ -906,7 +906,7 @@ namespace rainbow_samart_car {
     //% weight=2 blockGap=8
     //% blockId="neopixel_colors" block="%color"
     //% subcategory=灯光
-    export function colors(color: NeoPixelColors): number {
+    export function colors(color: CarNeoPixelColors): number {
         return color;
     }
 
@@ -1133,16 +1133,16 @@ namespace rainbow_samart_car {
 
         //补光灯
         let al = new TeenkitCarStrip();
-        let stride = NeoPixelMode.RGB;
+        let stride = CarNeoPixelMode.RGB;
         al.buf = pins.createBuffer(4 * stride);
         al.start = 0;
         al._length = 4;
-        al._mode = NeoPixelMode.RGB;
+        al._mode = CarNeoPixelMode.RGB;
         al._matrixWidth = 0;
         al.setBrightness(255)
         al.setPin(DigitalPin.P13)
 
-        al.showColor(NeoPixelColors.White);
+        al.showColor(CarNeoPixelColors.White);
 
     }
 }
