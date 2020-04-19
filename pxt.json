@@ -4,12 +4,11 @@
     "description": "multifunctional smart car",
     "dependencies": {
         "core": "*",
-        "radio": "*",
         "ws2812b": "github:Microsoft/pxt-ws2812b#v0.0.4"
     },
     "files": [
         "README.md",
-        "car.ts"
+        "rainbowcar.ts"
     ],
     "testFiles": [
         "test.ts"
